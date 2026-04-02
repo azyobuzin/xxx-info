@@ -1,71 +1,183 @@
 <script lang="ts">
-  import {
-    Chart,
-    LineController,
-    LineElement,
-    PointElement,
-    LinearScale,
-    CategoryScale,
-    Filler,
-    Tooltip,
-  } from "chart.js";
+import { Chart } from "chart.js/auto";
 
-  Chart.register(
-    LineController,
-    LineElement,
-    PointElement,
-    LinearScale,
-    CategoryScale,
-    Filler,
-    Tooltip
-  );
+// ── Dummy data generators ──
 
-  // ── Dummy data generators ──
-
-  function generateTimeSeries(
-    base: number,
-    amplitude: number,
-    noise: number,
-    clamp?: number
-  ): number[] {
-    return Array.from({ length: 24 }, (_, h) => {
-      let v = base + Math.sin(h / 3) * amplitude + (Math.random() - 0.3) * noise;
-      if (clamp !== undefined) v = Math.min(Math.max(v, 0), clamp);
-      return Math.round(v);
-    });
-  }
-
-  const hours = Array.from({ length: 24 }, (_, h) => `${h}:00`);
-
-  // 30-day uptime: mostly ok, a couple partial
-  const uptimeDays = Array.from({ length: 30 }, (_, i) => {
-    if (i === 12 || i === 25) return "partial";
-    return "ok";
+function generateTimeSeries(
+  base: number,
+  amplitude: number,
+  noise: number,
+  clamp?: number,
+): number[] {
+  return Array.from({ length: 24 }, (_, h) => {
+    let v = base + Math.sin(h / 3) * amplitude + (Math.random() - 0.3) * noise;
+    if (clamp !== undefined) v = Math.min(Math.max(v, 0), clamp);
+    return Math.round(v);
   });
+}
 
-  // ── Chart rendering ──
+const hours = Array.from({ length: 24 }, (_, h) => `${h}:00`);
 
-  function createChart(
-    canvas: HTMLCanvasElement,
-    data: number[],
-    color: string,
-    fillColor: string,
-    unit: string,
-    yMax?: number
-  ) {
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-    const tickColor = isDark ? "#888" : "#999";
+// 30-day uptime: mostly ok, a couple partial
+const uptimeDays = Array.from({ length: 30 }, (_, i) => {
+  if (i === 12 || i === 25) return "partial";
+  return "ok";
+});
 
-    return new Chart(canvas, {
+// ── Chart color palette ──
+
+function getChartColors(dark: boolean) {
+  return {
+    green: dark ? "#5DCAA5" : "#1D9E75",
+    greenFill: dark ? "rgba(93,202,165,0.08)" : "rgba(29,158,117,0.08)",
+    red: dark ? "#F09595" : "#E24B4A",
+    redFill: dark ? "rgba(240,149,149,0.25)" : "rgba(226,75,74,0.25)",
+    orange: dark ? "#E8A86D" : "#C87A2E",
+    orangeFill: dark ? "rgba(232,168,109,0.1)" : "rgba(200,122,46,0.08)",
+    purple: dark ? "#AFA9EC" : "#534AB7",
+    purpleFill: dark ? "rgba(175,169,236,0.1)" : "rgba(83,74,183,0.08)",
+    blue: dark ? "#85B7EB" : "#378ADD",
+    blueFill: dark ? "rgba(133,183,235,0.1)" : "rgba(55,138,221,0.08)",
+    grid: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+    tick: dark ? "#888" : "#999",
+  };
+}
+
+// ── Reactive dark mode ──
+
+const darkQuery =
+  typeof window !== "undefined"
+    ? window.matchMedia("(prefers-color-scheme: dark)")
+    : undefined;
+
+let isDark = $state(darkQuery?.matches ?? false);
+
+$effect(() => {
+  if (!darkQuery) return;
+  const onChange = (e: MediaQueryListEvent) => {
+    isDark = e.matches;
+  };
+  darkQuery.addEventListener("change", onChange);
+  return () => darkQuery.removeEventListener("change", onChange);
+});
+
+// ── Chart rendering ──
+
+function createChart(
+  canvas: HTMLCanvasElement,
+  data: number[],
+  color: string,
+  fillColor: string,
+  unit: string,
+  yMax?: number,
+) {
+  const c = getChartColors(isDark);
+  return new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: hours,
+      datasets: [
+        {
+          data,
+          borderColor: color,
+          backgroundColor: fillColor,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHitRadius: 8,
+          borderWidth: 1.5,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.parsed.y + unit,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: c.tick, font: { size: 11 }, maxTicksLimit: 6 },
+        },
+        y: {
+          grid: { color: c.grid },
+          ticks: {
+            color: c.tick,
+            font: { size: 11 },
+            callback: (v) => v + unit,
+          },
+          min: 0,
+          max: yMax,
+        },
+      },
+    },
+  });
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: used in {@attach}
+function chartAttachment(params: {
+  data: number[];
+  color: (c: ReturnType<typeof getChartColors>) => string;
+  fill: (c: ReturnType<typeof getChartColors>) => string;
+  unit: string;
+  yMax?: number;
+}) {
+  return (canvas: HTMLCanvasElement) => {
+    const c = getChartColors(isDark);
+    const chart = createChart(
+      canvas,
+      params.data,
+      params.color(c),
+      params.fill(c),
+      params.unit,
+      params.yMax,
+    );
+    return () => chart.destroy();
+  };
+}
+
+const respData = generateTimeSeries(110, 40, 30);
+const cpuData = generateTimeSeries(20, 12, 8, 100);
+const memData = generateTimeSeries(55, 8, 5, 100);
+
+const reqData = generateTimeSeries(3200, 500, 300);
+// 5xx: normally ~0.02% of requests, with occasional spikes
+const errData = reqData.map((r) => {
+  const spike = Math.random() < 0.08 ? Math.random() * 0.05 : 0;
+  return Math.round(r * (0.0002 + spike));
+});
+
+// biome-ignore lint/correctness/noUnusedVariables: used in {@attach}
+function reqErrorChartAttachment() {
+  return (canvas: HTMLCanvasElement) => {
+    const c = getChartColors(isDark);
+    const chart = new Chart(canvas, {
       type: "line",
       data: {
         labels: hours,
         datasets: [
           {
-            data,
-            borderColor: color,
-            backgroundColor: fillColor,
+            label: "リクエスト数",
+            data: reqData,
+            borderColor: c.green,
+            backgroundColor: c.greenFill,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            pointHitRadius: 8,
+            borderWidth: 1.5,
+          },
+          {
+            label: "5xx エラー数",
+            data: errData,
+            borderColor: c.red,
+            backgroundColor: c.redFill,
             fill: true,
             tension: 0.35,
             pointRadius: 0,
@@ -80,50 +192,34 @@
         plugins: {
           legend: { display: false },
           tooltip: {
+            mode: "index",
+            intersect: false,
             callbacks: {
-              label: (c) => c.parsed.y + unit,
+              label: (ctx) =>
+                `${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toLocaleString()}`,
             },
           },
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: tickColor, font: { size: 11 }, maxTicksLimit: 6 },
+            ticks: { color: c.tick, font: { size: 11 }, maxTicksLimit: 6 },
           },
           y: {
-            grid: { color: gridColor },
+            grid: { color: c.grid },
             ticks: {
-              color: tickColor,
+              color: c.tick,
               font: { size: 11 },
-              callback: (v) => v + unit,
+              callback: (v) => Number(v).toLocaleString(),
             },
             min: 0,
-            max: yMax,
           },
         },
       },
     });
-  }
-
-  function chartAttachment(params: {
-    data: number[];
-    color: string;
-    fill: string;
-    unit: string;
-    yMax?: number;
-  }) {
-    return (canvas: HTMLCanvasElement) => {
-      const chart = createChart(canvas, params.data, params.color, params.fill, params.unit, params.yMax);
-      return () => chart.destroy();
-    };
-  }
-
-  const isDark =
-    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-  const respData = generateTimeSeries(110, 40, 30);
-  const cpuData = generateTimeSeries(20, 12, 8, 100);
-  const memData = generateTimeSeries(55, 8, 5, 100);
+    return () => chart.destroy();
+  };
+}
 </script>
 
 <section>
@@ -144,7 +240,7 @@
   </p>
 </section>
 
-<hr />
+<hr>
 
 <section>
   <h2>利用状況</h2>
@@ -182,18 +278,35 @@
   </div>
 </section>
 
-<hr />
+<hr>
 
 <section>
   <h2>パフォーマンス</h2>
 
-  <div class="chart-section">
-    <div class="chart-header">
-      <h3>レスポンスタイム</h3>
-      <p class="chart-latest">124 ms <span class="chart-latest-sub">直近5分平均</span></p>
+  <div class="charts-dual">
+    <div class="chart-section">
+      <div class="chart-header">
+        <h3>リクエスト数 / 5xx エラー</h3>
+        <p class="chart-latest">
+          3.2k <span class="chart-latest-sub">req/h</span>
+        </p>
+      </div>
+      <div class="chart-wrap">
+        <canvas {@attach reqErrorChartAttachment()}></canvas>
+      </div>
     </div>
-    <div class="chart-wrap">
-      <canvas {@attach chartAttachment({ data: respData, color: isDark ? "#5DCAA5" : "#1D9E75", fill: isDark ? "rgba(93,202,165,0.08)" : "rgba(29,158,117,0.08)", unit: "ms" })}></canvas>
+    <div class="chart-section">
+      <div class="chart-header">
+        <h3>レスポンスタイム</h3>
+        <p class="chart-latest">
+          124 ms <span class="chart-latest-sub">直近5分平均</span>
+        </p>
+      </div>
+      <div class="chart-wrap">
+        <canvas
+          {@attach chartAttachment({ data: respData, color: (c) => c.orange, fill: (c) => c.orangeFill, unit: "ms" })}
+        ></canvas>
+      </div>
     </div>
   </div>
 
@@ -201,274 +314,182 @@
     <div class="chart-section">
       <div class="chart-header">
         <h3>CPU 使用率</h3>
-        <p class="chart-latest">23% <span class="chart-latest-sub">直近5分平均</span></p>
+        <p class="chart-latest">
+          23% <span class="chart-latest-sub">直近5分平均</span>
+        </p>
       </div>
       <div class="chart-wrap">
-        <canvas {@attach chartAttachment({ data: cpuData, color: isDark ? "#AFA9EC" : "#534AB7", fill: isDark ? "rgba(175,169,236,0.1)" : "rgba(83,74,183,0.08)", unit: "%", yMax: 100 })}></canvas>
+        <canvas
+          {@attach chartAttachment({ data: cpuData, color: (c) => c.purple, fill: (c) => c.purpleFill, unit: "%", yMax: 100 })}
+        ></canvas>
       </div>
     </div>
     <div class="chart-section">
       <div class="chart-header">
         <h3>メモリ使用率</h3>
-        <p class="chart-latest">58% <span class="chart-latest-sub">直近5分平均</span></p>
+        <p class="chart-latest">
+          58% <span class="chart-latest-sub">直近5分平均</span>
+        </p>
       </div>
       <div class="chart-wrap">
-        <canvas {@attach chartAttachment({ data: memData, color: isDark ? "#85B7EB" : "#378ADD", fill: isDark ? "rgba(133,183,235,0.1)" : "rgba(55,138,221,0.08)", unit: "%", yMax: 100 })}></canvas>
+        <canvas
+          {@attach chartAttachment({ data: memData, color: (c) => c.blue, fill: (c) => c.blueFill, unit: "%", yMax: 100 })}
+        ></canvas>
       </div>
-    </div>
-  </div>
-
-  <div class="perf-cards">
-    <div class="metric-card">
-      <h3>5xx エラー率</h3>
-      <p class="metric-val">0.02<span class="metric-unit">%</span></p>
-      <p class="metric-sub">過去24時間</p>
-    </div>
-    <div class="metric-card">
-      <h3>Oban キュー</h3>
-      <p class="metric-val">12<span class="metric-unit"> jobs</span></p>
-      <p class="metric-sub">処理待ち</p>
-    </div>
-    <div class="metric-card">
-      <h3>DB コミット</h3>
-      <p class="metric-val">284<span class="metric-unit">/s</span></p>
-      <p class="metric-sub">過去1時間平均</p>
-    </div>
-  </div>
-
-  <div class="gauge-section">
-    <h3>リソース容量</h3>
-    <div class="gauge-row">
-      <span class="gauge-label">DB コネクション</span>
-      <div class="gauge-bar-bg">
-        <div class="gauge-bar-fill" style="width: 35%; background: var(--amber);"></div>
-      </div>
-      <span class="gauge-val">35 / 100</span>
-    </div>
-    <div class="gauge-row">
-      <span class="gauge-label">ディスク使用量</span>
-      <div class="gauge-bar-bg">
-        <div class="gauge-bar-fill" style="width: 62%; background: var(--amber);"></div>
-      </div>
-      <span class="gauge-val">18.6 / 30 GB</span>
     </div>
   </div>
 </section>
 
-<p class="updated">最終更新: 2026-04-02 14:30 JST — 5分ごとに自動更新</p>
-
 <style>
-  /* ── Uptime ── */
-  .big-uptime {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-sm);
-  }
+/* ── Uptime ── */
+.big-uptime {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
 
-  .big-uptime-num {
-    font-size: var(--text-xl);
-    font-weight: 500;
-    letter-spacing: -0.02em;
-  }
+.big-uptime-num {
+  font-size: var(--text-xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
 
-  .big-uptime-sub {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-  }
+.big-uptime-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
 
-  .uptime-bar {
-    display: flex;
-    gap: 2px;
-  }
+.uptime-bar {
+  display: flex;
+  gap: 2px;
+}
 
-  .uptime-day {
-    flex: 1;
-    height: 28px;
-    border-radius: 2px;
-    cursor: default;
-  }
+.uptime-day {
+  flex: 1;
+  height: 28px;
+  border-radius: 2px;
+  cursor: default;
+}
 
-  .uptime-day.ok {
-    background: var(--green);
-    opacity: 0.6;
-  }
+.uptime-day.ok {
+  background: var(--green);
+  opacity: 0.6;
+}
 
-  .uptime-day.ok:hover {
-    opacity: 1;
-  }
+.uptime-day.ok:hover {
+  opacity: 1;
+}
 
-  .uptime-day.partial {
-    background: var(--amber);
-    opacity: 0.75;
-  }
+.uptime-day.partial {
+  background: var(--amber);
+  opacity: 0.75;
+}
 
-  .uptime-day.partial:hover {
-    opacity: 1;
-  }
+.uptime-day.partial:hover {
+  opacity: 1;
+}
 
-  .bar-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
+.bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: 4px;
+}
 
-  /* ── Metrics ── */
+/* ── Metrics ── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+}
+
+@media (max-width: 540px) {
   .metric-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-sm);
-  }
-
-  @media (max-width: 540px) {
-    .metric-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  .metric-card {
-    background: var(--bg-muted);
-    border-radius: var(--radius);
-    padding: var(--space-md);
-  }
-
-  .metric-card h3 {
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--text-muted);
-    margin: 0 0 4px;
-  }
-
-  .metric-val {
-    font-size: var(--text-lg);
-    font-weight: 500;
-    letter-spacing: -0.01em;
-  }
-
-  .metric-unit {
-    font-size: var(--text-sm);
-    font-weight: 400;
-    color: var(--text-muted);
-  }
-
-  .metric-sub {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-
-  .trend-up {
-    color: var(--green);
-  }
-
-  /* ── Charts ── */
-  .chart-section {
-    margin-bottom: var(--space-md);
-  }
-
-  .chart-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: var(--space-sm);
-  }
-
-  .chart-header h3 {
-    font-size: var(--text-base);
-    font-weight: 500;
-    margin: 0;
-  }
-
-  .chart-latest {
-    font-size: var(--text-base);
-    font-weight: 500;
-  }
-
-  .chart-latest-sub {
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-left: 4px;
-  }
-
-  .chart-wrap {
-    position: relative;
-    height: 160px;
-  }
-
-  .charts-dual {
-    display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-md);
   }
+}
 
-  @media (max-width: 540px) {
-    .charts-dual {
-      grid-template-columns: 1fr;
-    }
-  }
+.metric-card {
+  background: var(--bg-muted);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+}
 
-  /* ── Perf cards ── */
-  .perf-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-sm);
-    margin-top: var(--space-md);
-  }
+.metric-card h3 {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
 
-  @media (max-width: 540px) {
-    .perf-cards {
-      grid-template-columns: 1fr;
-    }
-  }
+.metric-val {
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
 
-  /* ── Gauges ── */
-  .gauge-section {
-    margin-top: var(--space-lg);
-  }
+.metric-unit {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+}
 
-  .gauge-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
-    background: var(--bg-muted);
-    border-radius: var(--radius);
-    margin-bottom: var(--space-sm);
-  }
+.metric-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
 
-  .gauge-label {
-    font-size: var(--text-base);
-    color: var(--text-muted);
-    width: 130px;
-    flex-shrink: 0;
-  }
+.trend-up {
+  color: var(--green);
+}
 
-  .gauge-bar-bg {
-    flex: 1;
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-  }
+/* ── Charts ── */
+.chart-section {
+  margin-bottom: var(--space-lg);
+}
 
-  .gauge-bar-fill {
-    height: 100%;
-    border-radius: 3px;
-  }
+.chart-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
 
-  .gauge-val {
-    font-size: var(--text-base);
-    font-weight: 500;
-    width: 100px;
-    text-align: right;
-    flex-shrink: 0;
-  }
+.chart-header h3 {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--text-muted);
+  margin: 0;
+}
 
-  /* ── Footer ── */
-  .updated {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-align: right;
+.chart-latest {
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.chart-latest-sub {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.chart-wrap {
+  position: relative;
+  height: 160px;
+}
+
+.charts-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+@media (max-width: 540px) {
+  .charts-dual {
+    grid-template-columns: 1fr;
   }
+}
 </style>

@@ -8,21 +8,17 @@
 
 /* ── Design Tokens ── */
 :root {
-  --font-sans: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-sans:
+    system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
 
   --text-sm: 0.875rem;
   --text-base: 1rem;
+  --text-md: 1.25rem;
   --text-lg: 1.5rem;
-  --text-xl: 2.5rem;
+  --text-xl: 2rem;
 
   --green: #1d9e75;
-  --green-bg: #e1f5ee;
   --amber: #ba7517;
-  --amber-bg: #faeeda;
-  --red: #e24b4a;
-  --red-bg: #fcebeb;
-  --purple: #534ab7;
-  --blue: #378add;
 
   --bg: #ffffff;
   --bg-muted: #f5f5f5;
@@ -41,13 +37,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --green: #5dcaa5;
-    --green-bg: #085041;
     --amber: #fac775;
-    --amber-bg: #412402;
-    --red: #f09595;
-    --red-bg: #501313;
-    --purple: #afa9ec;
-    --blue: #85b7eb;
 
     --bg: #1a1a1a;
     --bg-muted: #252525;
@@ -69,7 +59,7 @@ body {
 
 /* ── Typography ── */
 main h2 {
-  font-size: var(--text-lg);
+  font-size: var(--text-md);
   font-weight: 600;
   margin-top: var(--space-lg);
   margin-bottom: var(--space-sm);

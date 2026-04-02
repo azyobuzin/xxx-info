@@ -10,9 +10,9 @@ let { children } = $props();
 <main>{@render children()}</main>
 
 <style>
-  main {
-    max-width: var(--content-width);
-    margin: 0 auto;
-    padding: var(--space-lg) var(--space-md);
-  }
+main {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: var(--space-md);
+}
 </style>
