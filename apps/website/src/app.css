@@ -1,0 +1,123 @@
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* ── Design Tokens ── */
+:root {
+  --font-sans: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.5rem;
+  --text-xl: 2.5rem;
+
+  --green: #1d9e75;
+  --green-bg: #e1f5ee;
+  --amber: #ba7517;
+  --amber-bg: #faeeda;
+  --red: #e24b4a;
+  --red-bg: #fcebeb;
+  --purple: #534ab7;
+  --blue: #378add;
+
+  --bg: #ffffff;
+  --bg-muted: #f5f5f5;
+  --text: #1a1a1a;
+  --text-muted: #666666;
+  --border: rgba(0, 0, 0, 0.12);
+
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+
+  --radius: 8px;
+  --content-width: 720px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --green: #5dcaa5;
+    --green-bg: #085041;
+    --amber: #fac775;
+    --amber-bg: #412402;
+    --red: #f09595;
+    --red-bg: #501313;
+    --purple: #afa9ec;
+    --blue: #85b7eb;
+
+    --bg: #1a1a1a;
+    --bg-muted: #252525;
+    --text: #e8e8e8;
+    --text-muted: #999999;
+    --border: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ── Base ── */
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography ── */
+main h2 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+
+main h3 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+
+/* ── Prose (for mdsvex content) ── */
+main p {
+  margin-bottom: var(--space-md);
+}
+
+main ul,
+main ol {
+  margin-bottom: var(--space-md);
+  padding-left: 1.5em;
+}
+
+main li {
+  margin-bottom: 0.25em;
+}
+
+main li > ul {
+  margin-top: 0.25em;
+  margin-bottom: 0;
+}
+
+main a {
+  color: var(--green);
+  text-decoration: none;
+}
+
+main a:hover {
+  text-decoration: underline;
+}
+
+main small {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+main hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--space-lg) 0;
+}

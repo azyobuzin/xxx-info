@@ -1,4 +1,5 @@
 <script lang="ts">
+import "../app.css";
 import Header from "$lib/components/Header.svelte";
 
 let { children } = $props();
@@ -7,3 +8,11 @@ let { children } = $props();
 <Header />
 
 <main>{@render children()}</main>
+
+<style>
+  main {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: var(--space-lg) var(--space-md);
+  }
+</style>
