@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "public": "apps/website/build",
+    "cleanUrls": true,
+    "ignore": ["**/.*"],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "xxx-info-api",
+          "pinTag": true
+        }
+      }
+    ],
+    "predeploy": ["pnpm --prefix apps/website run build"]
+  }
+}

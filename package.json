@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "fix": "biome check --write",
+    "test": "biome ci && tsc -noEmit && tsx --test $(find lib -name '*.test.ts')"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10"
+  }
+}

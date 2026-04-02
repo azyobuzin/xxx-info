@@ -1,0 +1,4 @@
+[tools]
+firebase = "15"
+node = "24"
+pnpm = "10"
