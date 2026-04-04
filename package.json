@@ -1,10 +1,16 @@
 {
   "private": true,
   "scripts": {
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "dev": "turbo run dev",
     "fix": "biome check --write",
-    "test": "biome ci && tsc -noEmit && tsx --test $(find lib -name '*.test.ts')"
+    "storybook": "turbo run storybook"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.10"
-  }
+    "@biomejs/biome": "2.4.10",
+    "firebase-tools": "^15.13.0",
+    "turbo": "^2.9.3"
+  },
+  "packageManager": "pnpm@10.33.0"
 }
