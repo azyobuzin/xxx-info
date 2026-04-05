@@ -58,14 +58,14 @@ body {
 }
 
 /* ── Typography ── */
-main h2 {
+h2 {
   font-size: var(--text-md);
   font-weight: 600;
   margin-top: var(--space-lg);
   margin-bottom: var(--space-sm);
 }
 
-main h3 {
+h3 {
   font-size: var(--text-base);
   font-weight: 600;
   margin-top: var(--space-lg);
@@ -73,40 +73,40 @@ main h3 {
 }
 
 /* ── Prose (for mdsvex content) ── */
-main p {
+p {
   margin-bottom: var(--space-md);
 }
 
-main ul,
-main ol {
+ul,
+ol {
   margin-bottom: var(--space-md);
   padding-left: 1.5em;
 }
 
-main li {
+li {
   margin-bottom: 0.25em;
 }
 
-main li > ul {
+li > ul {
   margin-top: 0.25em;
   margin-bottom: 0;
 }
 
-main a {
+a {
   color: var(--green);
   text-decoration: none;
 }
 
-main a:hover {
+a:hover {
   text-decoration: underline;
 }
 
-main small {
+small {
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
-main hr {
+hr {
   border: none;
   border-top: 1px solid var(--border);
   margin: var(--space-lg) 0;
