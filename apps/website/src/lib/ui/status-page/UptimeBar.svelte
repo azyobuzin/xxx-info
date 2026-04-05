@@ -1,16 +1,15 @@
 <script lang="ts">
 interface Props {
   uptimePercent: string;
-  uptimeLabel: string;
   days: { status: "ok" | "partial" | "down"; tooltip?: string }[];
 }
 
-let { uptimePercent, uptimeLabel, days }: Props = $props();
+let { uptimePercent, days }: Props = $props();
 </script>
 
 <p class="big-uptime">
   <span class="big-uptime-num">{uptimePercent}</span>
-  <span class="big-uptime-sub">{uptimeLabel}</span>
+  <span class="big-uptime-sub">過去{days.length}日間の総合稼働率</span>
 </p>
 <div class="uptime-bar">
   {#each days as day, i (i)}

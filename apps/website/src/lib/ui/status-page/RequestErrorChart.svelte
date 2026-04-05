@@ -3,10 +3,8 @@ import { Chart } from "chart.js/auto";
 import { getChartColors } from "./colors.svelte.ts";
 
 interface Props {
-  title: string;
-  latestValue: string;
-  latestLabel: string;
   labels: string[];
+  latestReqPerHour: number;
   requestData: number[];
   errorData: number[];
   requestSeriesLabel?: string;
@@ -14,15 +12,18 @@ interface Props {
 }
 
 let {
-  title,
-  latestValue,
-  latestLabel,
   labels,
+  latestReqPerHour,
   requestData,
   errorData,
   requestSeriesLabel = "リクエスト数",
   errorSeriesLabel = "5xx エラー数",
 }: Props = $props();
+
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return n.toLocaleString();
+}
 
 // biome-ignore lint/correctness/noUnusedVariables: used in {@attach}
 function attach(canvas: HTMLCanvasElement) {
@@ -109,9 +110,10 @@ function attach(canvas: HTMLCanvasElement) {
 
 <div class="chart-section">
   <div class="chart-header">
-    <h3>{title}</h3>
+    <h3>リクエスト数 / 5xx エラー</h3>
     <p class="chart-latest">
-      {latestValue} <span class="chart-latest-sub">{latestLabel}</span>
+      {formatCount(latestReqPerHour)}
+      <span class="chart-latest-sub">req/h</span>
     </p>
   </div>
   <div class="chart-wrap"><canvas {@attach attach}></canvas></div>

@@ -8,7 +8,6 @@ import UptimeBar from "./UptimeBar.svelte";
 interface Props {
   uptime: {
     percent: string;
-    label: string;
     days: { status: "ok" | "partial" | "down"; tooltip?: string }[];
   };
   metrics: {
@@ -18,30 +17,25 @@ interface Props {
     trend?: "up" | "down";
   }[];
   charts: {
-    labels: string[];
     requestError: {
-      title: string;
-      latestValue: string;
-      latestLabel: string;
+      labels: string[];
+      latestReqPerHour: number;
       requestData: number[];
       errorData: number[];
     };
     responseTime: {
-      title: string;
-      latestValue: string;
-      latestLabel: string;
+      labels: string[];
+      latestMs: number;
       data: number[];
     };
     cpu: {
-      title: string;
-      latestValue: string;
-      latestLabel: string;
+      labels: string[];
+      latestPercent: number;
       data: number[];
     };
     memory: {
-      title: string;
-      latestValue: string;
-      latestLabel: string;
+      labels: string[];
+      latestPercent: number;
       data: number[];
     };
   };
@@ -52,11 +46,7 @@ let { uptime, metrics, charts }: Props = $props();
 
 <section>
   <h2>サービス稼働状況</h2>
-  <UptimeBar
-    uptimePercent={uptime.percent}
-    uptimeLabel={uptime.label}
-    days={uptime.days}
-  />
+  <UptimeBar uptimePercent={uptime.percent} days={uptime.days} />
 </section>
 
 <hr>
@@ -82,18 +72,16 @@ let { uptime, metrics, charts }: Props = $props();
 
   <div class="charts-dual">
     <RequestErrorChart
-      title={charts.requestError.title}
-      latestValue={charts.requestError.latestValue}
-      latestLabel={charts.requestError.latestLabel}
-      labels={charts.labels}
+      labels={charts.requestError.labels}
+      latestReqPerHour={charts.requestError.latestReqPerHour}
       requestData={charts.requestError.requestData}
       errorData={charts.requestError.errorData}
     />
     <TimeSeriesChart
-      title={charts.responseTime.title}
-      latestValue={charts.responseTime.latestValue}
-      latestLabel={charts.responseTime.latestLabel}
-      labels={charts.labels}
+      title="レスポンスタイム"
+      latestValue="{charts.responseTime.latestMs} ms"
+      latestLabel="直近5分平均"
+      labels={charts.responseTime.labels}
       data={charts.responseTime.data}
       colorKey="orange"
       unit="ms"
@@ -102,20 +90,20 @@ let { uptime, metrics, charts }: Props = $props();
 
   <div class="charts-dual">
     <TimeSeriesChart
-      title={charts.cpu.title}
-      latestValue={charts.cpu.latestValue}
-      latestLabel={charts.cpu.latestLabel}
-      labels={charts.labels}
+      title="CPU 使用率"
+      latestValue="{charts.cpu.latestPercent}%"
+      latestLabel="直近5分平均"
+      labels={charts.cpu.labels}
       data={charts.cpu.data}
       colorKey="purple"
       unit="%"
       yMax={100}
     />
     <TimeSeriesChart
-      title={charts.memory.title}
-      latestValue={charts.memory.latestValue}
-      latestLabel={charts.memory.latestLabel}
-      labels={charts.labels}
+      title="メモリ使用率"
+      latestValue="{charts.memory.latestPercent}%"
+      latestLabel="直近5分平均"
+      labels={charts.memory.labels}
       data={charts.memory.data}
       colorKey="blue"
       unit="%"

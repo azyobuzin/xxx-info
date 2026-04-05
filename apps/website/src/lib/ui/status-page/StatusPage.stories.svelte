@@ -25,17 +25,27 @@ function generateTimeSeries(
 
 const hours = Array.from({ length: 24 }, (_, h) => `${h}:00`);
 
+function uptimeDays(
+  statusFn: (i: number) => "ok" | "partial" | "down",
+  length = 30,
+) {
+  return Array.from({ length }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (length - i));
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const status = statusFn(i);
+    const percent =
+      status === "ok" ? "100%" : status === "partial" ? "95.2%" : "0%";
+    return { status, tooltip: `${yyyy}-${mm}-${dd} ${percent}` };
+  });
+}
+
 const defaultArgs = {
   uptime: {
     percent: "99.98%",
-    label: "過去30日間の総合稼働率",
-    days: Array.from({ length: 30 }, (_, i) => ({
-      status: (i === 12 || i === 25 ? "partial" : "ok") as
-        | "ok"
-        | "partial"
-        | "down",
-      tooltip: `${30 - i}日前`,
-    })),
+    days: uptimeDays((i) => (i === 12 || i === 25 ? "partial" : "ok")),
   },
   metrics: [
     {
@@ -67,30 +77,25 @@ const defaultArgs = {
       return Math.round(r * (0.0002 + spike));
     });
     return {
-      labels: hours,
       requestError: {
-        title: "リクエスト数 / 5xx エラー",
-        latestValue: "3.2k",
-        latestLabel: "req/h",
+        labels: hours,
+        latestReqPerHour: 3200,
         requestData: reqData,
         errorData: errData,
       },
       responseTime: {
-        title: "レスポンスタイム",
-        latestValue: "124 ms",
-        latestLabel: "直近5分平均",
+        labels: hours,
+        latestMs: 124,
         data: generateTimeSeries(110, 40, 30),
       },
       cpu: {
-        title: "CPU 使用率",
-        latestValue: "23%",
-        latestLabel: "直近5分平均",
+        labels: hours,
+        latestPercent: 23,
         data: generateTimeSeries(20, 12, 8, 100),
       },
       memory: {
-        title: "メモリ使用率",
-        latestValue: "58%",
-        latestLabel: "直近5分平均",
+        labels: hours,
+        latestPercent: 58,
         data: generateTimeSeries(55, 8, 5, 100),
       },
     };
@@ -100,14 +105,9 @@ const defaultArgs = {
 const degradedArgs = {
   uptime: {
     percent: "95.20%",
-    label: "過去30日間の総合稼働率",
-    days: Array.from({ length: 30 }, (_, i) => ({
-      status: (i % 5 === 0 ? "partial" : i === 3 || i === 18 ? "down" : "ok") as
-        | "ok"
-        | "partial"
-        | "down",
-      tooltip: `${30 - i}日前`,
-    })),
+    days: uptimeDays((i) =>
+      i % 5 === 0 ? "partial" : i === 3 || i === 18 ? "down" : "ok",
+    ),
   },
   metrics: [
     { title: "ローカル投稿数", value: "8,204", subtitle: "+5 (24h)" },
@@ -134,30 +134,25 @@ const degradedArgs = {
       return Math.round(r * (0.01 + spike));
     });
     return {
-      labels: hours,
       requestError: {
-        title: "リクエスト数 / 5xx エラー",
-        latestValue: "1.1k",
-        latestLabel: "req/h",
+        labels: hours,
+        latestReqPerHour: 1100,
         requestData: reqData,
         errorData: errData,
       },
       responseTime: {
-        title: "レスポンスタイム",
-        latestValue: "850 ms",
-        latestLabel: "直近5分平均",
+        labels: hours,
+        latestMs: 850,
         data: generateTimeSeries(600, 300, 200),
       },
       cpu: {
-        title: "CPU 使用率",
-        latestValue: "87%",
-        latestLabel: "直近5分平均",
+        labels: hours,
+        latestPercent: 87,
         data: generateTimeSeries(80, 15, 10, 100),
       },
       memory: {
-        title: "メモリ使用率",
-        latestValue: "92%",
-        latestLabel: "直近5分平均",
+        labels: hours,
+        latestPercent: 92,
         data: generateTimeSeries(88, 8, 5, 100),
       },
     };

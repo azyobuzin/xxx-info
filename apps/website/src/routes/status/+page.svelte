@@ -18,13 +18,19 @@ function generateTimeSeries(
 
 const hours = Array.from({ length: 24 }, (_, h) => `${h}:00`);
 
-const uptimeDays = Array.from({ length: 30 }, (_, i) => ({
-  status: (i === 12 || i === 25 ? "partial" : "ok") as
+const uptimeDays = Array.from({ length: 30 }, (_, i) => {
+  const date = new Date();
+  date.setDate(date.getDate() - (30 - i));
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const status = (i === 12 || i === 25 ? "partial" : "ok") as
     | "ok"
     | "partial"
-    | "down",
-  tooltip: `${30 - i}日前`,
-}));
+    | "down";
+  const percent = status === "ok" ? "100%" : "95.2%";
+  return { status, tooltip: `${yyyy}-${mm}-${dd} ${percent}` };
+});
 
 const reqData = generateTimeSeries(3200, 500, 300);
 const errData = reqData.map((r) => {
@@ -36,7 +42,6 @@ const errData = reqData.map((r) => {
 <StatusPage
   uptime={{
 		percent: "99.98%",
-		label: "過去30日間の総合稼働率",
 		days: uptimeDays,
 	}}
   metrics={[
@@ -48,30 +53,25 @@ const errData = reqData.map((r) => {
 		{ title: "送信フェデレーション", value: "842", subtitle: "リクエスト/h" },
 	]}
   charts={{
-		labels: hours,
 		requestError: {
-			title: "リクエスト数 / 5xx エラー",
-			latestValue: "3.2k",
-			latestLabel: "req/h",
+			labels: hours,
+			latestReqPerHour: 3200,
 			requestData: reqData,
 			errorData: errData,
 		},
 		responseTime: {
-			title: "レスポンスタイム",
-			latestValue: "124 ms",
-			latestLabel: "直近5分平均",
+			labels: hours,
+			latestMs: 124,
 			data: generateTimeSeries(110, 40, 30),
 		},
 		cpu: {
-			title: "CPU 使用率",
-			latestValue: "23%",
-			latestLabel: "直近5分平均",
+			labels: hours,
+			latestPercent: 23,
 			data: generateTimeSeries(20, 12, 8, 100),
 		},
 		memory: {
-			title: "メモリ使用率",
-			latestValue: "58%",
-			latestLabel: "直近5分平均",
+			labels: hours,
+			latestPercent: 58,
 			data: generateTimeSeries(55, 8, 5, 100),
 		},
 	}}
