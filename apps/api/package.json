@@ -1,0 +1,26 @@
+{
+  "name": "@xxx-info/api",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "dev": "node --watch src/server.ts",
+    "start": "node src/server.ts"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.4.1",
+    "@hono/node-server": "^1.19.12",
+    "date-fns": "^4.1.0",
+    "google-auth-library": "^10.6.2",
+    "hono": "^4.12.10",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "24",
+    "typescript": "~6.0.2"
+  }
+}
