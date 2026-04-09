@@ -8,10 +8,6 @@ const UPTIME_SELECTOR = `
   }`;
 
 // 複数リージョンからのデータがあるため、平均を取る
-export const IS_UP_PROMQL = `
-  avg(${UPTIME_SELECTOR})
-`;
+export const IS_UP_PROMQL = `avg(${UPTIME_SELECTOR})`;
 
-export const DAILY_UPTIME_PROMQL = `
-  avg(avg_over_time(${UPTIME_SELECTOR}[1d]))
-`;
+export const DAILY_UPTIME_PROMQL = `avg(avg_over_time(${UPTIME_SELECTOR}[1d]))`;
