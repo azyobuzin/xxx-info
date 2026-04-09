@@ -17,9 +17,20 @@ function handleHealth(c: Context) {
   return c.text("It works!");
 }
 
-function handleInstanceStatus(
+async function handleInstanceStatus(
   c: Context,
   metricsQueryService: IMetricsQueryService,
 ) {
-  return c.json({});
+  const [isUp, dailyUptime] = await Promise.all([
+    metricsQueryService.isUp(),
+    metricsQueryService.getDailyUptime(),
+  ]);
+
+  // CDNに1分間キャッシュさせる
+  c.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+
+  return c.json({
+    isUp,
+    dailyUptime,
+  });
 }

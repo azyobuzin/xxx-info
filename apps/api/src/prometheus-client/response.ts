@@ -7,7 +7,7 @@ const SampleValue = z
     value: parseFloat(value),
   }));
 
-const InstantVectorData = z.object({
+const VectorData = z.object({
   resultType: z.literal("vector"),
   result: z.array(
     z.object({
@@ -17,9 +17,19 @@ const InstantVectorData = z.object({
   ),
 });
 
+const MatrixData = z.object({
+  resultType: z.literal("matrix"),
+  result: z.array(
+    z.object({
+      metric: z.record(z.string(), z.string()),
+      values: z.array(SampleValue),
+    }),
+  ),
+});
+
 const QueryResponse = z.object({
   status: z.literal("success"),
-  data: z.union([InstantVectorData]),
+  data: VectorData,
 });
 
 export type QueryResponseData = z.infer<typeof QueryResponse>["data"];
@@ -31,10 +41,7 @@ export function parseQueryResponse(response: unknown): QueryResponseData {
 
 const QueryRangeResponse = z.object({
   status: z.literal("success"),
-  data: z.union([
-    // TODO
-    InstantVectorData,
-  ]),
+  data: MatrixData,
 });
 
 export type QueryRangeResponseData = z.infer<typeof QueryRangeResponse>["data"];

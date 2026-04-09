@@ -5,7 +5,8 @@
     "check-types": "turbo run check-types",
     "dev": "turbo run dev",
     "fix": "biome check --write",
-    "storybook": "turbo run storybook"
+    "storybook": "turbo run storybook",
+    "test": "turbo run test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.10",
