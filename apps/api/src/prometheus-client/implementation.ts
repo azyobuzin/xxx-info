@@ -1,4 +1,4 @@
-import { GoogleAuth } from "google-auth-library";
+import { googleAuth } from "../google-auth-singleton.ts";
 import type { IPrometheusClient } from "./interface.ts";
 import {
   type QueryRangeRequest,
@@ -14,14 +14,6 @@ import {
 } from "./response.ts";
 
 export class PrometheusClient implements IPrometheusClient {
-  #googleAuth: GoogleAuth;
-
-  constructor() {
-    this.#googleAuth = new GoogleAuth({
-      scopes: "https://www.googleapis.com/auth/monitoring.read",
-    });
-  }
-
   // === IPrometheusClient implementation ===
 
   async query(parameters: Readonly<QueryRequest>): Promise<QueryResponseData> {
@@ -40,22 +32,25 @@ export class PrometheusClient implements IPrometheusClient {
 
   async rawQuery(parameters: Readonly<QueryRequest>): Promise<unknown> {
     const searchParams = queryRequestToURLSearchParams(parameters);
-    const url = `${await this.#urlPrefix()}/query?${searchParams}`;
-    const response = await this.#googleAuth.fetch(url);
-    return response.data;
+    return await this.#get(`query?${searchParams}`);
   }
 
   async rawQueryRange(
     parameters: Readonly<QueryRangeRequest>,
   ): Promise<unknown> {
     const searchParams = queryRangeRequestToURLSearchParams(parameters);
-    const url = `${await this.#urlPrefix()}/query_range?${searchParams}`;
-    const response = await this.#googleAuth.fetch(url);
-    return response.data;
+    return await this.#get(`query_range?${searchParams}`);
   }
 
-  async #urlPrefix(): Promise<string> {
-    const projectId = await this.#googleAuth.getProjectId();
-    return `https://monitoring.googleapis.com/v1/projects/${projectId}/location/global/prometheus/api/v1`;
+  /** GETリクエストを送信します。 */
+  async #get(url: string): Promise<unknown> {
+    const projectId = await googleAuth.getProjectId();
+    const requestUrl = `https://monitoring.googleapis.com/v1/projects/${projectId}/location/global/prometheus/api/v1/${url}`;
+    const response = await googleAuth.request({
+      url: requestUrl,
+      // HACK: instrumentation-undiciに捕捉させるためにfetchを直接渡す
+      fetchImplementation: fetch,
+    });
+    return response.data;
   }
 }
