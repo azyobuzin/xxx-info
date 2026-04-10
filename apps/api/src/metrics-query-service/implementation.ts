@@ -4,8 +4,18 @@ import {
   type IPrometheusClient,
   PrometheusClient,
 } from "../prometheus-client/index.ts";
-import type { DailyUptime, IMetricsQueryService } from "./interface.ts";
-import { DAILY_UPTIME_PROMQL, IS_UP_PROMQL } from "./queries.ts";
+import type {
+  DailyUptime,
+  IMetricsQueryService,
+  MetricWithDiff,
+} from "./interface.ts";
+import {
+  DAILY_UPTIME_PROMQL,
+  DOMAIN_COUNT_PROMQL,
+  IS_UP_PROMQL,
+  LOCAL_STATUS_COUNT_PROMQL,
+  LOCAL_USER_COUNT_PROMQL,
+} from "./queries.ts";
 
 const jst = tz("Asia/Tokyo");
 
@@ -46,7 +56,48 @@ export class MetricsQueryService implements IMetricsQueryService {
     return data.result[0].values.map((v) => ({
       // タイムスタンプはavg_over_time(...[1d])の期間終端なので、見出しはその前日
       date: format(subDays(v.timestamp, 1), "yyyy-MM-dd", { in: jst }),
-      uptimeRate: Number.isNaN(v.value) ? 0 : v.value, // NaNは0%とみなす
+      uptimeRate: Number.isFinite(v.value) ? v.value : 0, // NaNは0%とみなす
     }));
+  }
+
+  async getLocalStatusCount(): Promise<MetricWithDiff> {
+    return this.#getMetricWithDiff(LOCAL_STATUS_COUNT_PROMQL);
+  }
+
+  async getLocalUserCount(): Promise<MetricWithDiff> {
+    return this.#getMetricWithDiff(LOCAL_USER_COUNT_PROMQL);
+  }
+
+  async getDomainCount(): Promise<MetricWithDiff> {
+    return this.#getMetricWithDiff(DOMAIN_COUNT_PROMQL);
+  }
+
+  async #getMetricWithDiff(query: string): Promise<MetricWithDiff> {
+    // step = 7d でデータポイントは現在と7日前の2点になる
+    const end = new Date();
+    const start = subDays(end, 7);
+
+    const data = await this.#prometheusClient.queryRange({
+      query,
+      start,
+      end,
+      step: "7d",
+    });
+
+    const values = data.result[0]?.values ?? [];
+
+    // 最新の値 = 配列の最後の要素
+    const current = values.at(-1)?.value ?? Number.NaN;
+
+    // 7日前の値。データポイントが1点しかない場合はNaNとみなす
+    const previous = values.length >= 2 ? values[0].value : Number.NaN;
+
+    return {
+      value: Number.isFinite(current) ? current : 0,
+      diff:
+        Number.isFinite(current) && Number.isFinite(previous)
+          ? current - previous
+          : null,
+    };
   }
 }

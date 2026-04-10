@@ -21,10 +21,14 @@ async function handleInstanceStatus(
   c: Context,
   metricsQueryService: IMetricsQueryService,
 ) {
-  const [isUp, dailyUptime] = await Promise.all([
-    metricsQueryService.isUp(),
-    metricsQueryService.getDailyUptime(),
-  ]);
+  const [isUp, dailyUptime, localStatusCount, localUserCount, domainCount] =
+    await Promise.all([
+      metricsQueryService.isUp(),
+      metricsQueryService.getDailyUptime(),
+      metricsQueryService.getLocalStatusCount(),
+      metricsQueryService.getLocalUserCount(),
+      metricsQueryService.getDomainCount(),
+    ]);
 
   // CDNに1分間キャッシュさせる
   c.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
@@ -32,5 +36,8 @@ async function handleInstanceStatus(
   return c.json({
     isUp,
     dailyUptime,
+    localStatusCount,
+    localUserCount,
+    domainCount,
   });
 }

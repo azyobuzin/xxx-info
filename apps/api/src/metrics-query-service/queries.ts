@@ -11,3 +11,9 @@ const UPTIME_SELECTOR = `
 export const IS_UP_PROMQL = `avg(${UPTIME_SELECTOR})`;
 
 export const DAILY_UPTIME_PROMQL = `avg(avg_over_time(${UPTIME_SELECTOR}[1d]))`;
+
+export const LOCAL_STATUS_COUNT_PROMQL = `{"__name__"="pleroma_instance_status_count","service"="xxx-prd"}`;
+
+export const LOCAL_USER_COUNT_PROMQL = `{"__name__"="pleroma_instance_user_count","service"="xxx-prd"}`;
+
+export const DOMAIN_COUNT_PROMQL = `{"__name__"="pleroma_instance_domain_count","service"="xxx-prd"}`;
