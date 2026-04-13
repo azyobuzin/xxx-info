@@ -17,3 +17,9 @@ export const LOCAL_STATUS_COUNT_PROMQL = `{"__name__"="pleroma_instance_status_c
 export const LOCAL_USER_COUNT_PROMQL = `{"__name__"="pleroma_instance_user_count","service"="xxx-prd"}`;
 
 export const DOMAIN_COUNT_PROMQL = `{"__name__"="pleroma_instance_domain_count","service"="xxx-prd"}`;
+
+export const REQUEST_COUNT_PROMQL = `sum(increase({"__name__"="pleroma_prom_ex_phoenix_http_requests_total"}[1h]))`;
+
+export const CPU_USAGE_PROMQL = `sum(increase({"__name__"="workload.googleapis.com/system.cpu.time","monitored_resource"="generic_node","node_id"="v133-18-241-95","state"!="idle"}[30m])) / sum(increase({"__name__"="workload.googleapis.com/system.cpu.time","monitored_resource"="generic_node","node_id"="v133-18-241-95"}[30m]))`;
+
+export const MEMORY_USAGE_PROMQL = `sum({"__name__"="workload.googleapis.com/system.memory.utilization","monitored_resource"="generic_node","node_id"="v133-18-241-95","state"=~"(used|slab_unreclaimable)"})`;

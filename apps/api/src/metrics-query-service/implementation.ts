@@ -1,5 +1,5 @@
 import { tz } from "@date-fns/tz";
-import { format, startOfTomorrow, subDays } from "date-fns";
+import { format, startOfTomorrow, subDays, subHours } from "date-fns";
 import {
   type IPrometheusClient,
   PrometheusClient,
@@ -8,13 +8,17 @@ import type {
   DailyUptime,
   IMetricsQueryService,
   MetricWithDiff,
+  TimeSeriesDataPoint,
 } from "./interface.ts";
 import {
+  CPU_USAGE_PROMQL,
   DAILY_UPTIME_PROMQL,
   DOMAIN_COUNT_PROMQL,
   IS_UP_PROMQL,
   LOCAL_STATUS_COUNT_PROMQL,
   LOCAL_USER_COUNT_PROMQL,
+  MEMORY_USAGE_PROMQL,
+  REQUEST_COUNT_PROMQL,
 } from "./queries.ts";
 
 const jst = tz("Asia/Tokyo");
@@ -70,6 +74,48 @@ export class MetricsQueryService implements IMetricsQueryService {
 
   async getDomainCount(): Promise<MetricWithDiff> {
     return this.#getMetricWithDiff(DOMAIN_COUNT_PROMQL);
+  }
+
+  async getRequestCountTimeSeries(): Promise<TimeSeriesDataPoint[]> {
+    const end = new Date();
+    const start = subHours(end, 23);
+
+    const data = await this.#prometheusClient.queryRange({
+      query: REQUEST_COUNT_PROMQL,
+      start,
+      end,
+      step: "1h",
+    });
+
+    return data.result[0]?.values.filter((v) => Number.isFinite(v.value)) ?? [];
+  }
+
+  async getCpuUsageTimeSeries(): Promise<TimeSeriesDataPoint[]> {
+    const end = new Date();
+    const start = subHours(end, 23.5);
+
+    const data = await this.#prometheusClient.queryRange({
+      query: CPU_USAGE_PROMQL,
+      start,
+      end,
+      step: "30m",
+    });
+
+    return data.result[0]?.values.filter((v) => Number.isFinite(v.value)) ?? [];
+  }
+
+  async getMemoryUsageTimeSeries(): Promise<TimeSeriesDataPoint[]> {
+    const end = new Date();
+    const start = subHours(end, 23.5);
+
+    const data = await this.#prometheusClient.queryRange({
+      query: MEMORY_USAGE_PROMQL,
+      start,
+      end,
+      step: "30m",
+    });
+
+    return data.result[0]?.values.filter((v) => Number.isFinite(v.value)) ?? [];
   }
 
   async #getMetricWithDiff(query: string): Promise<MetricWithDiff> {

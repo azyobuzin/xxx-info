@@ -213,3 +213,103 @@ test("getDomainCount returns current value and diff from 7 days ago", async (t: 
   // Assert
   t.assert.deepStrictEqual(result, { value: 13089, diff: 20 });
 });
+
+test("getRequestCountTimeSeries returns hourly request counts", async (t: TestContext) => {
+  // Arrange
+  // REQUEST_COUNT_PROMQL のレスポンス（3ポイント）
+  // step: "1h"
+  const stubPrometheusClient = createQueryRangeStub({
+    status: "success",
+    data: {
+      resultType: "matrix",
+      result: [
+        {
+          metric: {},
+          values: [
+            [1776086196.488, "3279.6677499999882"],
+            [1776089796.488, "2391.73355"],
+            [1776093396.488, "2223"],
+          ],
+        },
+      ],
+    },
+  });
+  const service = new MetricsQueryService(stubPrometheusClient);
+
+  // Act
+  const result = await service.getRequestCountTimeSeries();
+
+  // Assert
+  // NOTE: Prometheusの外挿により、valueは整数にならない
+  t.assert.deepStrictEqual(result, [
+    { timestamp: new Date(1776086196488), value: 3279.6677499999882 },
+    { timestamp: new Date(1776089796488), value: 2391.73355 },
+    { timestamp: new Date(1776093396488), value: 2223 },
+  ]);
+});
+
+test("getCpuUsageTimeSeries returns 30-min CPU usage ratios", async (t: TestContext) => {
+  // Arrange
+  // CPU_USAGE_PROMQL のレスポンス（3ポイント）
+  // step: "30m"
+  const stubPrometheusClient = createQueryRangeStub({
+    status: "success",
+    data: {
+      resultType: "matrix",
+      result: [
+        {
+          metric: {},
+          values: [
+            [1776089806.198, "0.2146484050671841"],
+            [1776091606.198, "0.22095579653166816"],
+            [1776093406.198, "0.28559351376681535"],
+          ],
+        },
+      ],
+    },
+  });
+  const service = new MetricsQueryService(stubPrometheusClient);
+
+  // Act
+  const result = await service.getCpuUsageTimeSeries();
+
+  // Assert
+  t.assert.deepStrictEqual(result, [
+    { timestamp: new Date(1776089806198), value: 0.2146484050671841 },
+    { timestamp: new Date(1776091606198), value: 0.22095579653166816 },
+    { timestamp: new Date(1776093406198), value: 0.28559351376681535 },
+  ]);
+});
+
+test("getMemoryUsageTimeSeries returns 30-min memory usage ratios", async (t: TestContext) => {
+  // Arrange
+  // MEMORY_USAGE_PROMQL のレスポンス（3ポイント）
+  // step: "30m"
+  const stubPrometheusClient = createQueryRangeStub({
+    status: "success",
+    data: {
+      resultType: "matrix",
+      result: [
+        {
+          metric: {},
+          values: [
+            [1776089808.865, "0.5274860883"],
+            [1776091608.865, "0.5278611889"],
+            [1776093408.865, "0.5048284214"],
+          ],
+        },
+      ],
+    },
+  });
+  const service = new MetricsQueryService(stubPrometheusClient);
+
+  // Act
+  const result = await service.getMemoryUsageTimeSeries();
+
+  // Assert
+  t.assert.deepStrictEqual(result, [
+    { timestamp: new Date(1776089808865), value: 0.5274860883 },
+    { timestamp: new Date(1776091608865), value: 0.5278611889 },
+    { timestamp: new Date(1776093408865), value: 0.5048284214 },
+  ]);
+});

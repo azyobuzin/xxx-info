@@ -13,6 +13,15 @@ export interface IMetricsQueryService {
 
   /** フェデレーションしているドメイン数と7日前との差分を取得します。 */
   getDomainCount(): Promise<MetricWithDiff>;
+
+  /** 過去24時間における1時間ごとのリクエスト数の時系列データを取得します。 */
+  getRequestCountTimeSeries(): Promise<TimeSeriesDataPoint[]>;
+
+  /** 過去24時間における30分ごとのCPU使用率 (0〜1) を取得します。 */
+  getCpuUsageTimeSeries(): Promise<TimeSeriesDataPoint[]>;
+
+  /** 過去24時間における30分ごとのメモリ使用率 (0〜1) を取得します。 */
+  getMemoryUsageTimeSeries(): Promise<TimeSeriesDataPoint[]>;
 }
 
 export type DailyUptime = {
@@ -29,4 +38,12 @@ export type MetricWithDiff = {
 
   /** 一定期間前との差分（前回の値がない場合はnull） */
   diff: number | null;
+};
+
+export type TimeSeriesDataPoint = {
+  /** タイムスタンプ */
+  timestamp: Date;
+
+  /** 値 */
+  value: number;
 };
