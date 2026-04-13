@@ -15,6 +15,7 @@ import {
   DAILY_UPTIME_PROMQL,
   DOMAIN_COUNT_PROMQL,
   IS_UP_PROMQL,
+  LATEST_CPU_USAGE_PROMQL,
   LOCAL_STATUS_COUNT_PROMQL,
   LOCAL_USER_COUNT_PROMQL,
   MEMORY_USAGE_PROMQL,
@@ -116,6 +117,13 @@ export class MetricsQueryService implements IMetricsQueryService {
     });
 
     return data.result[0]?.values.filter((v) => Number.isFinite(v.value)) ?? [];
+  }
+
+  async getLatestCpuUsage(): Promise<number> {
+    const data = await this.#prometheusClient.query({
+      query: LATEST_CPU_USAGE_PROMQL,
+    });
+    return data.result[0]?.value.value ?? 0;
   }
 
   async #getMetricWithDiff(query: string): Promise<MetricWithDiff> {

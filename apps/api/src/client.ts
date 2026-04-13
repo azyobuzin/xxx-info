@@ -1,6 +1,8 @@
 import { hc } from "hono/client";
 import type { createApiRoute } from "./routes.ts";
 
+export type * from "./response-types.ts";
+
 type RouteType = ReturnType<typeof createApiRoute>;
 export type ApiClient = ReturnType<typeof hc<RouteType>>;
 

@@ -313,3 +313,27 @@ test("getMemoryUsageTimeSeries returns 30-min memory usage ratios", async (t: Te
     { timestamp: new Date(1776093408865), value: 0.5048284214 },
   ]);
 });
+
+test("getLatestCpuUsage returns current CPU usage ratio", async (t: TestContext) => {
+  // Arrange
+  // LATEST_CPU_USAGE_PROMQL のレスポンス
+  const stubPrometheusClient = createQueryStub({
+    status: "success",
+    data: {
+      resultType: "vector",
+      result: [
+        {
+          metric: {},
+          value: [1776095207.535, "0.21065955749272222"],
+        },
+      ],
+    },
+  });
+  const service = new MetricsQueryService(stubPrometheusClient);
+
+  // Act
+  const result = await service.getLatestCpuUsage();
+
+  // Assert
+  t.assert.strictEqual(result, 0.21065955749272222);
+});

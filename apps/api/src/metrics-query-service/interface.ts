@@ -22,6 +22,9 @@ export interface IMetricsQueryService {
 
   /** 過去24時間における30分ごとのメモリ使用率 (0〜1) を取得します。 */
   getMemoryUsageTimeSeries(): Promise<TimeSeriesDataPoint[]>;
+
+  /** 最新のCPU使用率 (0〜1) を取得します。 */
+  getLatestCpuUsage(): Promise<number>;
 }
 
 export type DailyUptime = {
