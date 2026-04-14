@@ -105,6 +105,7 @@ function attach(canvas: HTMLCanvasElement) {
 <style>
 .chart-section {
   margin-bottom: var(--space-lg);
+  min-width: 0;
 }
 
 .chart-header {
@@ -130,5 +131,6 @@ function attach(canvas: HTMLCanvasElement) {
 .chart-wrap {
   position: relative;
   height: 160px;
+  overflow: hidden;
 }
 </style>
