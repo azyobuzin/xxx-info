@@ -26,18 +26,19 @@
 #   # 4. Grant IAM roles
 #   SA="github-actions-deploy@xxxserver.iam.gserviceaccount.com"
 #
-#   for role in roles/run.admin roles/cloudbuild.builds.editor \
+#   for role in roles/run.admin roles/cloudbuild.builds.editor roles/storage.objectCreator \
 #     roles/artifactregistry.writer roles/firebasehosting.admin roles/firebase.viewer; do
 #     gcloud projects add-iam-policy-binding xxxserver \
 #       --member="serviceAccount:$SA" --role="$role"
 #   done
 #
-#   # Allow SA to act as the Cloud Run runtime service account
-#   gcloud iam service-accounts add-iam-policy-binding \
-#     "$(gcloud iam service-accounts list --project=xxxserver \
-#        --filter='email ~ compute@developer' --format='value(email)')" \
-#     --member="serviceAccount:$SA" \
-#     --role="roles/iam.serviceAccountUser"
+#   # Allow SA to act as the Cloud Run runtime SA and Cloud Build default SA
+#   for target in xxx-info-api@xxxserver.iam.gserviceaccount.com \
+#     665883790690-compute@developer.gserviceaccount.com; do
+#     gcloud iam service-accounts add-iam-policy-binding "$target" \
+#       --member="serviceAccount:$SA" \
+#       --role="roles/iam.serviceAccountUser"
+#   done
 #
 #   # 5. Allow WIF to impersonate the service account
 #   gcloud iam service-accounts add-iam-policy-binding "$SA" \
@@ -56,6 +57,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: deploy-${{ github.ref }}
