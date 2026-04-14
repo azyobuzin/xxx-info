@@ -28,7 +28,11 @@
     "vite": "^8.0.3"
   },
   "dependencies": {
+    "@tanstack/svelte-query": "^6.1.13",
     "@xxx-info/api": "workspace:*",
-    "chart.js": "^4.5.1"
+    "chart.js": "^4.5.1",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "date-fns": "^4.1.0",
+    "hono": "^4.12.10"
   }
 }

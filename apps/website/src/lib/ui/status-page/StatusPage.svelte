@@ -1,52 +1,58 @@
 <script lang="ts">
+import type {
+  InstanceStatusResponse,
+  MetricWithDiff,
+  TimeSeriesData,
+} from "@xxx-info/api/client";
 import MetricCard from "./MetricCard.svelte";
 import MetricGrid from "./MetricGrid.svelte";
-import RequestErrorChart from "./RequestErrorChart.svelte";
 import TimeSeriesChart from "./TimeSeriesChart.svelte";
 import UptimeBar from "./UptimeBar.svelte";
 
 interface Props {
-  uptime: {
-    percent: string;
-    days: { status: "ok" | "partial" | "down"; tooltip?: string }[];
-  };
-  metrics: {
-    title: string;
-    value: string;
-    subtitle?: string;
-    trend?: "up" | "down";
-  }[];
-  charts: {
-    requestError: {
-      labels: string[];
-      latestReqPerHour: number;
-      requestData: number[];
-      errorData: number[];
-    };
-    responseTime: {
-      labels: string[];
-      latestMs: number;
-      data: number[];
-    };
-    cpu: {
-      labels: string[];
-      latestPercent: number;
-      data: number[];
-    };
-    memory: {
-      labels: string[];
-      latestPercent: number;
-      data: number[];
-    };
+  data: InstanceStatusResponse;
+}
+
+let { data }: Props = $props();
+
+function formatMetric(
+  title: string,
+  m: MetricWithDiff,
+): { title: string; value: string; subtitle?: string; trend?: "up" | "down" } {
+  const value = m.value.toLocaleString();
+  if (m.diff == null) return { title, value };
+  const sign = m.diff > 0 ? "+" : "";
+  return {
+    title,
+    value,
+    subtitle: `${sign}${m.diff.toLocaleString()} (7d)`,
+    trend: m.diff > 0 ? "up" : m.diff < 0 ? "down" : undefined,
   };
 }
 
-let { uptime, metrics, charts }: Props = $props();
+function toXY(ts: TimeSeriesData): { x: number; y: number }[] {
+  return ts.points.map((p) => ({ x: p.timestamp, y: p.value }));
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: used in template
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return n.toLocaleString();
+}
+
+const metrics = $derived([
+  formatMetric("ローカルステータス数", data.usageSection.localStatusCount),
+  formatMetric("ローカルユーザー数", data.usageSection.localUserCount),
+  formatMetric("ドメイン数", data.usageSection.domainCount),
+]);
 </script>
 
 <section>
   <h2>サービス稼働状況</h2>
-  <UptimeBar uptimePercent={uptime.percent} days={uptime.days} />
+  <UptimeBar
+    isUp={data.uptimeSection.isUp}
+    dailyUptime={data.uptimeSection.dailyUptime}
+  />
 </section>
 
 <hr>
@@ -70,44 +76,45 @@ let { uptime, metrics, charts }: Props = $props();
 <section>
   <h2>パフォーマンス</h2>
 
-  <div class="charts-dual">
-    <RequestErrorChart
-      labels={charts.requestError.labels}
-      latestReqPerHour={charts.requestError.latestReqPerHour}
-      requestData={charts.requestError.requestData}
-      errorData={charts.requestError.errorData}
-    />
-    <TimeSeriesChart
-      title="レスポンスタイム"
-      latestValue="{charts.responseTime.latestMs} ms"
-      latestLabel="直近5分平均"
-      labels={charts.responseTime.labels}
-      data={charts.responseTime.data}
-      colorKey="orange"
-      unit="ms"
-    />
-  </div>
+  <TimeSeriesChart
+    title="リクエスト数"
+    latestValue="{formatCount(data.performanceSection.requestCount.latestValue)} req/h"
+    data={toXY(data.performanceSection.requestCount)}
+    colorKey="green"
+    unit="req/h"
+    decimals={0}
+  />
 
   <div class="charts-dual">
     <TimeSeriesChart
       title="CPU 使用率"
-      latestValue="{charts.cpu.latestPercent}%"
-      latestLabel="直近5分平均"
-      labels={charts.cpu.labels}
-      data={charts.cpu.data}
+      latestValue="{Math.round(data.performanceSection.cpuUsage.latestValue * 100)}%"
+      data={toXY({
+        ...data.performanceSection.cpuUsage,
+        points: data.performanceSection.cpuUsage.points.map((p) => ({
+          ...p,
+          value: p.value * 100,
+        })),
+      })}
       colorKey="purple"
       unit="%"
       yMax={100}
+      decimals={1}
     />
     <TimeSeriesChart
       title="メモリ使用率"
-      latestValue="{charts.memory.latestPercent}%"
-      latestLabel="直近5分平均"
-      labels={charts.memory.labels}
-      data={charts.memory.data}
+      latestValue="{Math.round(data.performanceSection.memoryUsage.latestValue * 100)}%"
+      data={toXY({
+        ...data.performanceSection.memoryUsage,
+        points: data.performanceSection.memoryUsage.points.map((p) => ({
+          ...p,
+          value: p.value * 100,
+        })),
+      })}
       colorKey="blue"
       unit="%"
       yMax={100}
+      decimals={1}
     />
   </div>
 </section>

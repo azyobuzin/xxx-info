@@ -34,19 +34,21 @@ let { title, value, subtitle, trend }: Props = $props();
   font-size: var(--text-base);
   font-weight: 500;
   color: var(--text-muted);
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-sm);
 }
 
 .metric-val {
   font-size: var(--text-lg);
   font-weight: 500;
   letter-spacing: -0.01em;
+  margin-bottom: 0;
 }
 
 .metric-sub {
   font-size: var(--text-sm);
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: var(--space-sm);
+  margin-bottom: 0;
 }
 
 .trend-up {

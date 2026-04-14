@@ -1,28 +1,21 @@
 <script lang="ts">
 import { Chart } from "chart.js/auto";
+import "chartjs-adapter-date-fns";
 import { getChartColors } from "./colors.svelte.ts";
 
 interface Props {
   title: string;
   latestValue: string;
-  latestLabel: string;
-  labels: string[];
-  data: number[];
+  data: { x: number; y: number }[];
   colorKey: "orange" | "purple" | "blue" | "green";
   unit: string;
   yMax?: number;
+  /** tooltip・Y軸ラベルに表示する小数点以下の桁数 */
+  decimals: number;
 }
 
-let {
-  title,
-  latestValue,
-  latestLabel,
-  labels,
-  data,
-  colorKey,
-  unit,
-  yMax,
-}: Props = $props();
+let { title, latestValue, data, colorKey, unit, yMax, decimals }: Props =
+  $props();
 
 const fillKeyMap = {
   orange: "orangeFill",
@@ -37,7 +30,6 @@ function attach(canvas: HTMLCanvasElement) {
   const chart = new Chart(canvas, {
     type: "line",
     data: {
-      labels: $state.snapshot(labels),
       datasets: [
         {
           data: $state.snapshot(data),
@@ -58,12 +50,17 @@ function attach(canvas: HTMLCanvasElement) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => ctx.parsed.y + unit,
+            label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(decimals)} ${unit}`,
           },
         },
       },
       scales: {
         x: {
+          type: "time",
+          time: {
+            tooltipFormat: "H:mm",
+            displayFormats: { hour: "H:mm" },
+          },
           grid: { display: false },
           ticks: { color: c.tick, font: { size: 11 }, maxTicksLimit: 6 },
         },
@@ -72,7 +69,6 @@ function attach(canvas: HTMLCanvasElement) {
           ticks: {
             color: c.tick,
             font: { size: 11 },
-            callback: (v) => v + unit,
           },
           min: 0,
           max: yMax,
@@ -101,9 +97,7 @@ function attach(canvas: HTMLCanvasElement) {
 <div class="chart-section">
   <div class="chart-header">
     <h3>{title}</h3>
-    <p class="chart-latest">
-      {latestValue} <span class="chart-latest-sub">{latestLabel}</span>
-    </p>
+    <p class="chart-latest">{latestValue}</p>
   </div>
   <div class="chart-wrap"><canvas {@attach attach}></canvas></div>
 </div>
@@ -130,13 +124,7 @@ function attach(canvas: HTMLCanvasElement) {
 .chart-latest {
   font-size: var(--text-base);
   font-weight: 500;
-}
-
-.chart-latest-sub {
-  font-size: var(--text-sm);
-  font-weight: 400;
   color: var(--text-muted);
-  margin-left: 4px;
 }
 
 .chart-wrap {
