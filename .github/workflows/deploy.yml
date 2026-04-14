@@ -1,0 +1,125 @@
+# CI & Deploy workflow for main branch
+#
+# Prerequisites — GCP setup (run once):
+#
+#   # 1. Create Workload Identity Pool
+#   gcloud iam workload-identity-pools create "github-actions" \
+#     --project="xxxserver" \
+#     --location="global" \
+#     --display-name="GitHub Actions"
+#
+#   # 2. Create OIDC Provider (restrict to this repo)
+#   gcloud iam workload-identity-pools providers create-oidc "github" \
+#     --project="xxxserver" \
+#     --location="global" \
+#     --workload-identity-pool="github-actions" \
+#     --display-name="GitHub" \
+#     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+#     --attribute-condition="assertion.repository == 'azyobuzin/xxx-info'" \
+#     --issuer-uri="https://token.actions.githubusercontent.com"
+#
+#   # 3. Create service account
+#   gcloud iam service-accounts create github-actions-deploy \
+#     --project="xxxserver" \
+#     --display-name="GitHub Actions Deploy"
+#
+#   # 4. Grant IAM roles
+#   SA="github-actions-deploy@xxxserver.iam.gserviceaccount.com"
+#
+#   for role in roles/run.admin roles/cloudbuild.builds.editor \
+#     roles/artifactregistry.writer roles/firebasehosting.admin roles/firebase.viewer; do
+#     gcloud projects add-iam-policy-binding xxxserver \
+#       --member="serviceAccount:$SA" --role="$role"
+#   done
+#
+#   # Allow SA to act as the Cloud Run runtime service account
+#   gcloud iam service-accounts add-iam-policy-binding \
+#     "$(gcloud iam service-accounts list --project=xxxserver \
+#        --filter='email ~ compute@developer' --format='value(email)')" \
+#     --member="serviceAccount:$SA" \
+#     --role="roles/iam.serviceAccountUser"
+#
+#   # 5. Allow WIF to impersonate the service account
+#   gcloud iam service-accounts add-iam-policy-binding "$SA" \
+#     --project="xxxserver" \
+#     --role="roles/iam.workloadIdentityUser" \
+#     --member="principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-actions/attribute.repository/azyobuzin/xxx-info"
+#
+#   # 6. Set GitHub repository variables (Settings > Variables > Actions):
+#   #   GCP_PROJECT_NUMBER  — your numeric project number
+#   #   WIF_POOL            — github-actions
+#   #   WIF_PROVIDER        — github
+#   #   GCP_SERVICE_ACCOUNT — github-actions-deploy@xxxserver.iam.gserviceaccount.com
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check-types
+      - run: pnpm test
+      - run: pnpm exec biome ci
+
+  deploy-api:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: "projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ vars.WIF_POOL }}/providers/${{ vars.WIF_PROVIDER }}"
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: xxx-info-api
+          region: asia-east1
+          source: .
+
+  deploy-website:
+    needs: deploy-api
+    environment:
+      name: production
+      url: https://xxx-info.azyobuzi.net
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: "projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ vars.WIF_POOL }}/providers/${{ vars.WIF_PROVIDER }}"
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @xxx-info/website exec firebase deploy --non-interactive
