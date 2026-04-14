@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>ご隠居 情報サイト</title>
+</svelte:head>
+
 ## 障害・メンテナンス情報
 
 - 2026/04/02現在、git.azyobuzi.netにアクセスできません

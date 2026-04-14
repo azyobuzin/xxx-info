@@ -7,6 +7,8 @@ import StatusPageSkeleton from "$lib/ui/status-page/StatusPageSkeleton.svelte";
 const query = createInstanceStatusQuery();
 </script>
 
+<svelte:head><title>ご隠居 ステータス</title></svelte:head>
+
 {#if query.isPending}
   <StatusPageSkeleton />
 {:else if query.isError}
