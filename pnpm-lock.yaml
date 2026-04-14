@@ -11,9 +11,6 @@ importers:
       '@biomejs/biome':
         specifier: 2.4.10
         version: 2.4.10
-      firebase-tools:
-        specifier: ^15.13.0
-        version: 15.13.0(@types/node@24.12.0)(typescript@6.0.2)
       turbo:
         specifier: ^2.9.3
         version: 2.9.3
@@ -115,6 +112,9 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
         version: 7.0.0(svelte@5.55.1)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.0)(esbuild@0.27.4)(yaml@2.8.3))
+      firebase-tools:
+        specifier: ^15.13.0
+        version: 15.13.0(@types/node@24.12.0)(typescript@6.0.2)
       mdsvex:
         specifier: ^0.12.6
         version: 0.12.7(svelte@5.55.1)
@@ -1624,6 +1624,7 @@ packages:
   basic-ftp@5.2.0:
     resolution: {integrity: sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   bignumber.js@9.3.1:
     resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}

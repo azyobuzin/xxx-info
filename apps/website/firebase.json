@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "apps/website/build",
+    "public": "build",
     "cleanUrls": true,
     "ignore": ["**/.*"],
     "rewrites": [
@@ -8,10 +8,11 @@
         "source": "/api/**",
         "run": {
           "serviceId": "xxx-info-api",
+          "region": "asia-east1",
           "pinTag": true
         }
       }
     ],
-    "predeploy": ["pnpm --prefix apps/website run build"]
+    "predeploy": ["pnpm run build"]
   }
 }
