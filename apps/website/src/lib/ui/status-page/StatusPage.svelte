@@ -41,7 +41,7 @@ function formatCount(n: number): string {
 }
 
 const metrics = $derived([
-  formatMetric("ローカルステータス数", data.usageSection.localStatusCount),
+  formatMetric("ローカル投稿数", data.usageSection.localStatusCount),
   formatMetric("ローカルユーザー数", data.usageSection.localUserCount),
   formatMetric("ドメイン数", data.usageSection.domainCount),
 ]);
