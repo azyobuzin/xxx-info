@@ -58,16 +58,62 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Deploy target"
+        required: true
+        type: choice
+        options:
+          - api
+          - website
+          - both
 
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_api: >-
+        ${{ github.event_name == 'workflow_dispatch' &&
+        (inputs.deploy_target == 'api' || inputs.deploy_target == 'both') ||
+        github.event_name == 'push' && steps.filter.outputs.api == 'true' }}
+      deploy_website: >-
+        ${{ github.event_name == 'workflow_dispatch' &&
+        (inputs.deploy_target == 'website' || inputs.deploy_target == 'both') ||
+        github.event_name == 'push' &&
+        (steps.filter.outputs.api == 'true' || steps.filter.outputs.website == 'true') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Manual runs use deploy_target instead of changed paths.
+      - uses: dorny/paths-filter@v4
+        id: filter
+        if: github.event_name == 'push'
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'Dockerfile'
+              - '.gcloudignore'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+            website:
+              - 'apps/website/**'
+              - 'apps/api/src/client.ts'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+
   ci:
     runs-on: ubuntu-latest
     steps:
@@ -83,7 +129,8 @@ jobs:
       - run: pnpm exec biome ci
 
   deploy-api:
-    needs: ci
+    needs: [changes, ci]
+    if: needs.changes.outputs.deploy_api == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +149,11 @@ jobs:
           source: .
 
   deploy-website:
-    needs: deploy-api
+    needs: [changes, ci, deploy-api]
+    if: >-
+      always() && needs.ci.result == 'success' &&
+      (needs.deploy-api.result == 'success' || needs.deploy-api.result == 'skipped') &&
+      needs.changes.outputs.deploy_website == 'true'
     environment:
       name: production
       url: https://xxx-info.azyobuzi.net
