@@ -34,7 +34,6 @@ function toXY(ts: TimeSeriesData): { x: number; y: number }[] {
   return ts.points.map((p) => ({ x: p.timestamp, y: p.value }));
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: used in template
 function formatCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
   return n.toLocaleString();
@@ -78,7 +77,9 @@ const metrics = $derived([
 
   <TimeSeriesChart
     title="リクエスト数"
-    latestValue="{formatCount(data.performanceSection.requestCount.latestValue)} req/h"
+    latestValue="{formatCount(
+      data.performanceSection.requestCount.latestValue,
+    )} req/h"
     data={toXY(data.performanceSection.requestCount)}
     colorKey="green"
     unit="req/h"
@@ -88,7 +89,9 @@ const metrics = $derived([
   <div class="charts-dual">
     <TimeSeriesChart
       title="CPU 使用率"
-      latestValue="{Math.round(data.performanceSection.cpuUsage.latestValue * 100)}%"
+      latestValue="{Math.round(
+        data.performanceSection.cpuUsage.latestValue * 100,
+      )}%"
       data={toXY({
         ...data.performanceSection.cpuUsage,
         points: data.performanceSection.cpuUsage.points.map((p) => ({
@@ -103,7 +106,9 @@ const metrics = $derived([
     />
     <TimeSeriesChart
       title="メモリ使用率"
-      latestValue="{Math.round(data.performanceSection.memoryUsage.latestValue * 100)}%"
+      latestValue="{Math.round(
+        data.performanceSection.memoryUsage.latestValue * 100,
+      )}%"
       data={toXY({
         ...data.performanceSection.memoryUsage,
         points: data.performanceSection.memoryUsage.points.map((p) => ({

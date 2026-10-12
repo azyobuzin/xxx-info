@@ -24,7 +24,6 @@ const fillKeyMap = {
   green: "greenFill",
 } as const;
 
-// biome-ignore lint/correctness/noUnusedVariables: used in {@attach}
 function attach(canvas: HTMLCanvasElement) {
   const c = getChartColors();
   const chart = new Chart(canvas, {
