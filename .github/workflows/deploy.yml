@@ -78,7 +78,7 @@ permissions:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       deploy_api: >-
         ${{ github.event_name == 'workflow_dispatch' &&
@@ -131,7 +131,8 @@ jobs:
   deploy-api:
     needs: [changes, ci]
     if: needs.changes.outputs.deploy_api == 'true'
-    runs-on: ubuntu-latest
+    # Cloud Buildに投げるだけなので、CPU使わない
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
