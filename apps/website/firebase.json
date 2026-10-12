@@ -8,8 +8,7 @@
         "source": "/api/**",
         "run": {
           "serviceId": "xxx-info-api",
-          "region": "asia-east1",
-          "pinTag": true
+          "region": "asia-east1"
         }
       }
     ],
